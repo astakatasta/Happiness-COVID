@@ -1,0 +1,36 @@
+---
+title: "Happinness and COVID-19"
+author: "Ilaria Fenos"
+date: "2022-08-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(readr)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduzione
+Il "World Happiness Report" è...
+
+Si hanno a disposizione i dati dal 2015 al 2022 di 153 stati
+
+Distopia... (1.85)
+
+5 fattori per misurare la felicità di uno stato
+
+```{r datasets}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

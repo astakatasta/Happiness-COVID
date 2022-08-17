@@ -8,6 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(readr)
+library(DescTools)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -21,16 +22,94 @@ Distopia... (1.85)
 
 5 fattori per misurare la felicità di uno stato
 
+## Importazione dei dati
 ```{r datasets}
-summary(cars)
+df_2015 = read.csv("datasets/2015.csv")
+df_2016 = read.csv("datasets/2016.csv")
+df_2017 = read.csv("datasets/2017.csv")
+df_2018 = read.csv("datasets/2018.csv")
+df_2019 = read.csv("datasets/2019.csv")
+df_2020 = read.csv("datasets/2020.csv")
+df_2021 = read.csv("datasets/2021.csv")
+df_2022 = read.csv("datasets/2022.csv")
 ```
 
-## Including Plots
+## Normalizzazione dei dati
+Il seguente codice serve per normalizzare i dati dei singoli dataframe per poi includerli in un unico dataset con cui lavorare.
 
-You can also embed plots, for example:
+```{r tidy}
+dfList <- list(df_2016, df_2017, df_2018, df_2019, df_2020, df_2021, df_2022)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+df_2020 = df_2020[,-(4:13)]
+df_2021 = df_2021[,-(4:13)]
+
+tidyDf = function(df) {
+  #aggiungo la colonna anno
+  year = substr(substitute(df),4,7)
+  df$Year = year
+  
+  #tolgo alcuni attributi che non mi interessano come l'errore standard e il residuo distopico
+  drops = c("Standard", "Whisker", "Dystopia", "Lower", "Upper", "Rank")
+  
+  df = df %>% select(-contains(drops))
+  
+  #rinonimo la colonna "Country"
+  colnames(df)[which(names(df) %like% "%ountry%")] <- "Country"
+  
+  #rinonimo la colonna "Score"
+  colnames(df)[which(names(df) %like% "%core%")] <- "Score"
+  
+  #rinonimo la colonna "GDP per capita"
+  colnames(df)[which(names(df) %like% "%GDP%")] <- "GDP per capita"
+  
+  #rinonimo la colonna "Social support"
+  colnames(df)[which(names(df) %like% "%Family%")] <- "Social support"
+  colnames(df)[which(names(df) %like% "%ocial%")] <- "Social support"
+  
+  #rinonimo la colonna "Generosity"
+  colnames(df)[which(names(df) %like% "%enerosity%")] <- "Generosity"
+  
+  #rinonimo la colonna "Trust in goverment"
+  colnames(df)[which(names(df) %like% "%orruption%")] <- "Trust in goverment"
+  
+  #rinonimo la colonna "Health"
+  colnames(df)[which(names(df) %like% "%ealth%")] <- "Health"
+  
+  #rinonimo la colonna "Freedom"
+  colnames(df)[which(names(df) %like% "%reedom%")] <- "Freedom"
+  
+  df = df %>% select(-contains("region")) %>% arrange(desc(Score))
+  
+  #return(df)
+}
+
+#applicare la funzione per ogni dataframe
+df_2015 = tidyDf(df_2015)
+#view(df_2015)
+df_2016 = tidyDf(df_2016)
+#view(df_2016)
+df_2017 = tidyDf(df_2017)
+#view(df_2017)
+df_2018 = tidyDf(df_2018)
+#view(df_2018)
+df_2019 = tidyDf(df_2019)
+#view(df_2019)
+df_2020 = tidyDf(df_2020)
+#view(df_2020)
+df_2021 = tidyDf(df_2021)
+#view(df_2021)
+df_2022 = tidyDf(df_2022)
+#view(df_2022)
+
+#unione di tutti i dataframe
+df_union = union(df_2015, df_2016)
+union(df_union, df_2017)
+union(df_union, df_2018)
+union(df_union, df_2019)
+union(df_union, df_2020)
+union(df_union, df_2021)
+union(df_union, df_2022)
+df_union = df_union %>% arrange(desc(Score))
+view(df_union)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

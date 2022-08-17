@@ -9,6 +9,7 @@ output: html_document
 library(tidyverse)
 library(readr)
 library(DescTools)
+library(hablar)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -31,14 +32,14 @@ df_2018 = read.csv("datasets/2018.csv")
 df_2019 = read.csv("datasets/2019.csv")
 df_2020 = read.csv("datasets/2020.csv")
 df_2021 = read.csv("datasets/2021.csv")
-df_2022 = read.csv("datasets/2022.csv")
+#df_2022 = read.csv("datasets/2022.csv")
 ```
 
 ## Normalizzazione dei dati
 Il seguente codice serve per normalizzare i dati dei singoli dataframe per poi includerli in un unico dataset con cui lavorare.
 
 ```{r tidy}
-dfList <- list(df_2016, df_2017, df_2018, df_2019, df_2020, df_2021, df_2022)
+#dfList <- list(df_2016, df_2017, df_2018, df_2019, df_2020, df_2021, df_2022)
 
 df_2020 = df_2020[,-(4:13)]
 df_2021 = df_2021[,-(4:13)]
@@ -80,7 +81,9 @@ tidyDf = function(df) {
   
   df = df %>% select(-contains("region")) %>% arrange(desc(Score))
   
-  #return(df)
+  df = df %>% convert(num(Score:Year))
+  
+
 }
 
 #applicare la funzione per ogni dataframe
@@ -98,18 +101,18 @@ df_2020 = tidyDf(df_2020)
 #view(df_2020)
 df_2021 = tidyDf(df_2021)
 #view(df_2021)
-df_2022 = tidyDf(df_2022)
+#df_2022 = tidyDf(df_2022)
 #view(df_2022)
 
 #unione di tutti i dataframe
 df_union = union(df_2015, df_2016)
-union(df_union, df_2017)
-union(df_union, df_2018)
-union(df_union, df_2019)
-union(df_union, df_2020)
-union(df_union, df_2021)
-union(df_union, df_2022)
+df_union = union(df_union, df_2017)
+df_union = union(df_union, df_2018)
+df_union = union(df_union, df_2019)
+df_union = union(df_union, df_2020)
+df_union = union(df_union, df_2021)
+#df_union = union(df_union, df_2022)
 df_union = df_union %>% arrange(desc(Score))
 view(df_union)
 ```
-
+## Cosa ci rendeva felici

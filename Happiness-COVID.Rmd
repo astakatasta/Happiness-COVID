@@ -32,7 +32,7 @@ df_2018 = read.csv("datasets/2018.csv")
 df_2019 = read.csv("datasets/2019.csv")
 df_2020 = read.csv("datasets/2020.csv")
 df_2021 = read.csv("datasets/2021.csv")
-#df_2022 = read.csv("datasets/2022.csv")
+df_2022 = read.csv("datasets/2022.csv")
 ```
 
 ## Normalizzazione dei dati
@@ -101,7 +101,7 @@ df_2020 = tidyDf(df_2020)
 #view(df_2020)
 df_2021 = tidyDf(df_2021)
 #view(df_2021)
-#df_2022 = tidyDf(df_2022)
+df_2022 = tidyDf(df_2022)
 #view(df_2022)
 
 #unione di tutti i dataframe
@@ -111,7 +111,7 @@ df_union = union(df_union, df_2018)
 df_union = union(df_union, df_2019)
 df_union = union(df_union, df_2020)
 df_union = union(df_union, df_2021)
-#df_union = union(df_union, df_2022)
+df_union = union(df_union, df_2022)
 df_union = df_union %>% arrange(desc(Score))
 view(df_union)
 ```

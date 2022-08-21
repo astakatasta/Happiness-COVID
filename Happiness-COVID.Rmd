@@ -113,6 +113,62 @@ df_union = union(df_union, df_2020)
 df_union = union(df_union, df_2021)
 df_union = union(df_union, df_2022)
 df_union = df_union %>% arrange(desc(Score))
+#view(df_union)
+
+#view(df_union[rowSums(is.na(df_union))>0,])
+#row 165 Trust = NA
+
+#controllo gli stati che appaiono più volte con nomi diversi
+#view(df_union %>% count(Country) %>% arrange(n) %>% filter(n < 8) %>% arrange(Country))
+
+#sistemo i nomi
+df_union = df_union %>% mutate(Country = case_when(
+  Country == "Azerbaijan*" ~ "Azerbaijan",
+  Country == "Belarus*" ~ "Belarus", 
+  Country == "Botswana*" ~ "Botswana",
+  Country == "Chad*" ~ "Chad",
+  Country == "Comoros*" ~ "Comoros",
+  Country == "Congo (Kinshasa)" ~ "Congo, Democratic Republic of the",
+  Country == "Congo (Brazzaville)" ~ "Congo",
+  Country == "Czechia" ~ "Czech Republic",
+  Country == "Eswatini, Kingdom of*" ~ "Eswatini",
+  Country == "Swaziland" ~ "Eswatini",
+  Country == "Guatemala*" ~ "Guatemala",
+  Country == "Gambia*" ~ "Gambia",
+  Country == "Hong Kong S.A.R., China" ~ "Hong Kong",
+  Country == "Hong Kong S.A.R. of China" ~ "Hong Kong",
+  Country == "Kuwait*" ~ "Kuwait",
+  Country == "Lesotho*" ~ "Lesotho",
+  Country == "Liberia*" ~ "Liberia",
+  Country == "Libya*" ~ "Libya",
+  Country == "Luxembourg*" ~ "Luxembourg",
+  Country == "Madagascar*" ~ "Madagascar",
+  Country == "Mauritania*" ~ "Mauritania",
+  Country == "Niger*" ~ "Niger",
+  Country == "Palestinian Territories*" ~ "Palestinian Territories",
+  Country == "Rwanda*" ~ "Rwanda",
+  Country == "Turkmenistan*" ~ "Turkmenistan",
+  Country == "Yemen*" ~ "Yemen",
+  Country == "North Macedonia" ~ "Macedonia",
+  Country == "Northern Cyprus" ~ "North Cyprus",
+  Country == "North Cyprus*" ~ "North Cyprus",
+  Country == "Somaliland region" ~ "Somaliland",
+  Country == "Somaliland Region" ~ "Somaliland",
+  Country == "Taiwan Province of China" ~ "Taiwan",
+  Country == "Trinidad & Tobago" ~ "Trinidad and Tobago",
+  TRUE ~ as.character(Country)
+))
+
+#togliere stati con meno di 7 anni di informazioni tranne Comoros a cui manca 2017 e 2018
+less7 = df_union %>% count(Country) %>% filter(n<7) %>% filter(Country != "Comoros")
+#print(df_union %>% count())
+#1231
+#print(sum(less7$n))
+#71 righe da eliminare
+df_less7 = filter(df_union, Country %in% less7$Country)
+df_union = setdiff(df_union, df_less7)
+#print(df_union %>% count())
+#1160
 view(df_union)
 ```
 ## Cosa ci rendeva felici

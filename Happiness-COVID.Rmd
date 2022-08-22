@@ -1,5 +1,5 @@
 ---
-title: "Happinness and COVID-19"
+title: "La felicità negli anni del COVID-19"
 author: "Ilaria Fenos"
 date: "2022-08-13"
 output: html_document
@@ -7,9 +7,12 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(lubridate)
 library(readr)
 library(DescTools)
 library(hablar)
+require(maps)
+library(tmap)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -169,6 +172,65 @@ df_less7 = filter(df_union, Country %in% less7$Country)
 df_union = setdiff(df_union, df_less7)
 #print(df_union %>% count())
 #1160
+df_union$iso_a3 = countrycode(sourcevar = prova$Country, origin = "country.name", destination = "iso3c")
+df_union = df_union %>% filter(Country != "Kosovo")
+#print(df_union %>% count())
+#1152
 view(df_union)
 ```
-## Cosa ci rendeva felici
+
+## La felicità nel mondo dal 2015 al 2022
+
+``` {r analyze}
+data("World")
+World = World %>% select(iso_a3, continent)
+World = left_join(df_union, World, by="iso_a3")
+
+avg_by_year = World %>% group_by(Year, continent) %>% summarise(avg = mean(Score))
+avg_by_year = avg_by_year %>% drop_na()
+ggplot(avg_by_year, aes(Year, avg, colour = continent)) +
+    geom_line(aes(group = continent), show.legend = TRUE) +
+    theme_classic()
+```
+``` {r}
+#data("World")
+#World = World %>% select(iso_a3, continent)
+#World = left_join(World, df_union, by="iso_a3")
+
+```
+
+``` {r echo=FALSE, message=FALSE, comment="", results='hide'}
+data("World")
+World = left_join(World, df_union, by="iso_a3")
+
+score_ap <- 
+  tm_shape(World) +
+  tm_facets(along = "Year", free.coords = FALSE, showNA = FALSE) +
+  tm_style("col_blind") +
+  tm_fill("Score", title="Felicità nel mondo dal 2015 al 2022", style = "fixed",
+        breaks = c(0, 2.5, 3.5, 4.5, 5.5, 6, 6.5, 7, 7.5, Inf),
+        palette = c("#BA0000", "red", "#FF4500", "orange", "yellow", "#32CD32", "#228B22", "#008000", "#006400"),
+        colorNA = "gray") +
+  tm_borders()
+
+#creazione gif
+tmap_animation(world_anim, filename = "score_by_year.gif", delay = 200, width = 1000, height = 620)
+```
+
+Animazione punteggio della felicità per paese dal 2015 al 2022
+
+```{r}
+knitr::include_graphics("score_by_year.gif")
+```
+
+## Andamento della felicità fra il 2015 e il 2019
+
+
+## Impatto nei primi mesi (2020) 
+
+
+## Andamento negli anni successivi
+
+
+## Conclusioni
+C'è stato un cambiamento significativo nella felicità fra gli anni prima del covid e il 2020? E negli anni successivi?

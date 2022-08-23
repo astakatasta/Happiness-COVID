@@ -246,7 +246,7 @@ country_score_change_2015_2019 <- df_2015_2019 %>%
               values_from = Score) %>% 
   rowwise() %>%
   mutate(Change = (`2019` - `2015`)) %>%
-  select(-c(`2015`, `2019`)) %>%
+  #select(-c(`2015`, `2019`)) %>%
   arrange(-Mean)
 ```
 
@@ -312,7 +312,7 @@ country_score_change_2019_2020 <- df_2019_2020 %>%
               values_from = Score) %>% 
   rowwise() %>%
   mutate(Change = (`2020` - `2019`)) %>%
-  select(-c(`2019`, `2020`)) %>%
+  #select(-c(`2019`, `2020`)) %>%
   arrange(-Mean)
 ```
 
@@ -409,7 +409,7 @@ Correlazione fra il punteggio di felicità e i fattori che la influenzano nel pe
 
 ``` {r}
 cor_2021_2022 <- round(
-  cor(df_2015_2019 %>% 
+  cor(df_2021_2022 %>% 
       drop_na() %>% 
       select(-c(Year, Country, iso_a3))
     ), 2)

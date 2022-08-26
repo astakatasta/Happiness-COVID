@@ -202,10 +202,18 @@ avg_by_year$Trust = a$Trust
 a = df_union %>% group_by(Year) %>% summarise(Generosity = mean(Generosity))
 avg_by_year$Generosity = a$Generosity
 
+avg_by_year[1,"Change"] = NA
+for (x in c(2:8)) {
+  avg_by_year[x,"Change"] = avg_by_year[x,"Score"] - avg_by_year[x-1,"Score"]
+}
+avg_by_year$Change = avg_by_year$Change * 100
+avg_by_year$Change = trunc(avg_by_year$Change*10^2)/10^2
+
 ggplot(avg_by_year, aes(x=Year, y=Score)) +
     geom_line(size=1) +
+    geom_text(aes(label=Change), position = position_dodge(width=0.5), hjust=-.5, size=3.5) +
     ggtitle("Andamento medio della felicità dal 2015 al 2022") +
-     theme_bw(base_size=15) +
+    theme_bw(base_size=15) +
     ylab("Punteggio") +
     xlab("Anno")
 ```
@@ -294,17 +302,15 @@ change_with_range = function(start, end) {
   
   df = df %>%
     group_by(Country) %>%
-    mutate(Mean = mean(Score)) %>%
-    select(Year, Country, Score, Mean) %>%
+    #mutate(Mean = mean(Score)) %>%
+    select(Year, Country, Score) %>%
     filter(Year == start | Year == end) %>%
     pivot_wider(names_from = Year, values_from = Score) %>% 
     rowwise()
   
-    names(df)[2] = paste("Mean ", start, end)
-  
-    df[[paste("Change ", end)]] <- df[[as.character(end)]] - df[[as.character(start)]]
+    df[[paste("Change", end)]] <- df[[as.character(end)]] - df[[as.character(start)]]
     
-    df = df[,-(3:4)]
+    df = df[,-(2:3)]
     
     df
 }
@@ -329,13 +335,36 @@ change_by_year = left_join(change_by_year, change_2018_2019, by= "Country")
 change_by_year = left_join(change_by_year, change_2019_2020, by= "Country") 
 change_by_year = left_join(change_by_year, change_2020_2021, by= "Country") 
 change_by_year = left_join(change_by_year, change_2021_2022, by= "Country")
+
+names(change_by_year) <- substring(names(change_by_year), 8)
+change_by_year = gather(change_by_year, 2:8, key = "Year", value = "Change")
+colnames(change_by_year)[1] = "Country"
 view(change_by_year)
+```
+
+``` {r echo=FALSE, message=FALSE, comment="score gif", results='hide'}
+change_by_year$iso_a3 = countrycode(sourcevar = change_by_year$Country, origin = "country.name", destination = "iso3c")
+change_by_year = change_by_year %>% drop_na()
+data("World")
+World = left_join(World, change_by_year, by="iso_a3")
+
+change_ap <- 
+  tm_shape(World) +
+  tm_facets(along = "Year", free.coords = FALSE, showNA = FALSE) +
+  tm_style("col_blind") +
+  tm_fill("Change", title="Aumento della felicità nel mondo dal 2015 al 2022", style = "fixed",
+        breaks = c(-2, -0.75, -0.5, -0.25, -0.1, 0, 0.1, 0.25, 0.5, 0.75, Inf),
+        palette = c("#BA0000", "red", "#FF4500", "orange", "yellow", "#90EE90", "#32CD32", "#228B22", "#008000", "#006400"),
+        colorNA = "gray") +
+  tm_borders()
+
+#creazione gif
+tmap_animation(change_ap, filename = "change_by_year.gif", delay = 200, width = 1000, height = 620)
 ```
 
 Che cambiamenti ha avuto il punteggio di felicità nel mondo fra il 2015 e il 2019?
 
 ``` {r}
-#alla Namibia manca il 2015
 df_2015_2019 = df_union %>% filter(Year < 2020)
 
 country_score_change_2015_2019 <- df_2015_2019 %>% 

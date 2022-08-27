@@ -20,13 +20,16 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduzione
-Il "World Happiness Report" è...
+Il *World Happiness Report* è una pubblicazione del Sustainable Development Solutions Network organizzato dal Gallup World Poll data he contiene articoli e classifiche della felicità nazionale dei vari stati del mondo, sulla base di interviste, e la mette mette anche in correlazione con vari fattori della vita come:
+- GDP per capita
+- salute
+- supporto sociale
+- libertà
+- fiducia nel governo
+- generosità
+percepiti dalle persone verso la propria comunità/nazione.
 
-Si hanno a disposizione i dati dal 2015 al 2022 di 153 stati
-
-Distopia... (1.85)
-
-5 fattori per misurare la felicità di uno stato
+I report coinvolgono 153 stati e sono stati reperiti su Kaggle al seguente link [World Happiness Report up to 2022](https://www.kaggle.com/datasets/mathurinache/world-happiness-report?resource=download&select=2015.csv)
 
 ## Importazione dei dati
 ```{r datasets}
@@ -180,10 +183,196 @@ df_union = df_union %>% drop_na()
 #1152
 #view(df_union)
 ```
+``` {r echo=FALSE, message=FALSE, comment="functions", results='hide'}
+options(scipen = 999)
 
-## Anamento della felicità nel mondo dal 2015 al 2022
+change_start_end = function(start, end) {
+  df = df_union %>% filter(Year == start | Year == end)
+  
+  df = df %>%
+    group_by(Country) %>%
+    #mutate(Mean = mean(Score)) %>%
+    select(Year, Country, Score) %>%
+    filter(Year == start | Year == end) %>%
+    pivot_wider(names_from = Year, values_from = Score) %>% 
+    rowwise()
+  
+    df[[paste("Change", end)]] <- df[[as.character(end)]] - df[[as.character(start)]]
+    
+    df = df[,-(2:3)]
+    
+    df
+}
+```
+
+## La felicità prima del COVID-19 (anni dal 2015 al 2020)
+``` {r}
+df_2015_2020 = df_union %>% filter(Year < 2021) %>% drop_na()
+
+data("World")
+World = World %>% select(iso_a3, continent)
+World = left_join(df_union, World, by="iso_a3")
+
+continents = World %>% select(Country, continent)
+
+mean_2015_2020 = df_2015_2020 %>% group_by(Country) %>% summarise(Mean = mean(Score))
+
+mean_2015_2020 = left_join(mean_2015_2020, a, by = "Country")
+
+mean_2015_2020 = mean_2015_2020[!duplicated(mean_2015_2020),]
+
+mean_2015_2020 %>% 
+  arrange(desc(Mean)) %>% 
+  slice_head(n = 20) %>% 
+  ggplot(aes(x = reorder(Country, Mean),
+             y = Mean,
+             colour = continent)) +
+  geom_col(width = 0.75) +
+  coord_flip() +
+  scale_fill_viridis_c(begin = 0, end = 0, option = "turbo") +
+  guides(fill = "none") +
+  labs(title = "Top 20 stati con punteggio di felicità più elevato (2015-2019)",
+       x = "",
+       y = "") +
+  geom_text(aes(label = round(Mean, 2)),
+            color = "white",
+            hjust = 1.5,
+            size = 3)
+``` 
+DIstribuzione felicità 2015-2020
 
 ``` {r}
+
+```
+
+``` {r}
+change_2015_2020 = change_start_end(2015,2020)
+
+colnames(change_2015_2020)[2] = "Change"
+
+a = df_union %>% 
+      filter(Year == 2015 | Year == 2020) %>% 
+      select(Year, Country, Score) %>%
+      pivot_wider(names_from = Year, values_from = Score) %>% 
+      rowwise()
+
+change_2015_2020 = left_join(change_2015_2020, a, by = "Country")
+
+change_2015_2020 = change_2015_2020[c("Country", "2015", "2020", "Change")]
+
+data("World")
+World = World %>% select(iso_a3, continent)
+World = left_join(df_union, World, by="iso_a3")
+
+a = World %>% select(Country, continent)
+
+change_2015_2020 = left_join(change_2015_2020, a, by = "Country")
+
+change_2015_2020 = change_2015_2020[!duplicated(change_2015_2020),]
+``` 
+
+## cambiamento ogni anno
+
+``` {r}
+change_2015_2016 = change_start_end(2015,2016)
+#print(mean(change_2015_2016$Change))
+change_2016_2017 = change_start_end(2016,2017)
+#print(mean(change_2016_2017$Change))
+change_2017_2018 = change_start_end(2017,2018)
+#print(mean(change_2017_2018$Change, na.rm = TRUE))
+change_2018_2019 = change_start_end(2018,2019)
+#print(mean(change_2018_2019$Change, na.rm = TRUE))
+change_2019_2020 = change_start_end(2019,2020)
+#print(mean(change_2019_2020$Change))
+change_2020_2021 = change_start_end(2020,2021)
+#print(mean(change_2020_2021$Change))
+change_2021_2022 = change_start_end(2021,2022)
+#print(mean(change_2021_2022$Change))
+change_by_year = left_join(change_2015_2016, change_2016_2017, by= "Country")
+change_by_year = left_join(change_by_year, change_2017_2018, by= "Country") 
+change_by_year = left_join(change_by_year, change_2018_2019, by= "Country") 
+change_by_year = left_join(change_by_year, change_2019_2020, by= "Country") 
+change_by_year = left_join(change_by_year, change_2020_2021, by= "Country") 
+change_by_year = left_join(change_by_year, change_2021_2022, by= "Country")
+
+names(change_by_year) <- substring(names(change_by_year), 8)
+change_by_year = gather(change_by_year, 2:8, key = "Year", value = "Change")
+colnames(change_by_year)[1] = "Country"
+view(change_by_year)
+```
+
+Che cambiamenti ha avuto il punteggio di felicità nel mondo fra il 2015 e il 2020
+
+``` {r}
+df_2015_2019 = df_union %>% filter(Year < 2020)
+
+country_score_change_2015_2019 <- df_2015_2019 %>% 
+  group_by(Country) %>%
+  mutate(Mean = mean(Score)) %>%
+  #count(n() == 5) %>%
+  select(Year, Country, Score, Mean) %>%
+  #mutate(as.integer(Year)) %>%
+  filter(Year == "2015" | Year == "2019") %>% 
+  pivot_wider(names_from = Year,
+              values_from = Score) %>% 
+  rowwise() %>%
+  mutate(Change = (`2019` - `2015`)) %>%
+  #select(-c(`2015`, `2019`)) %>%
+  arrange(-Mean)
+```
+
+Numero di stati che hanno avuto un incremento della felicità
+
+``` {r}
+positive_2015_2019 = country_score_change_2015_2019 %>% filter(Change > 0)
+show(nrow(positive_2015_2019))
+```
+
+Numero di stati che hanno avuto un decremento della felicità:
+
+``` {r}
+negative_2015_2019 = country_score_change_2015_2019 %>% filter(Change < 0)
+show(nrow(negative_2015_2019))
+```
+
+Medie dei cambiamenti dello score della felicità tra il 2015 e il 2019
+
+``` {r}
+show("Nel totale: ")
+show(mean(country_score_change_2015_2019$Change))
+show("In positivo:")
+show(mean(positive_2015_2019$Change))
+show("In negativo:")
+show(mean(negative_2015_2019$Change))
+```
+
+Correlazione fra il punteggio di felicità e i fattori che la influenzano nel periodo 2015-2020
+
+``` {r}
+cor_2015_2019 <- round(
+  cor(df_2015_2019 %>% 
+      drop_na() %>% 
+      select(-c(Year, Country, iso_a3))
+    ), 2)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+
+# Plot correlation matrix
+corrplot(cor_2015_2019,
+         method = "shade",
+         shade.col = NA,
+         tl.col = "black",
+         tl.srt = 45,
+         col = col(200),
+         addCoef.col = "black",
+         cl.pos = "n",
+         order = "AOE",
+         type = "upper")
+```
+
+## Felicità dopo l'avvento del COVID-19
+
+```{r}
 data("World")
 World = World %>% select(iso_a3, continent)
 World = left_join(df_union, World, by="iso_a3")
@@ -220,6 +409,32 @@ ggplot(avg_by_year, aes(x=Year, y=Score)) +
     ylab("Punteggio") +
     xlab("Anno")
 ```
+
+``` {r}
+mean_by_country = World %>% group_by(Country) %>% 
+                  summarise(Mean = mean(Score))
+
+mean_by_country$Country = factor(mean_by_country$Country, 
+                                  levels = mean_by_country$Country[
+                                    order(mean_by_country$Mean, decreasing = TRUE)])
+
+mean_by_country %>% ggplot(aes(x=Country, y=Mean)) +
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x=element_blank()) +
+  geom_line(aes(x = as.numeric(Country), y = Mean), color = "red", size = 2.5)
+
+``` 
+``` {r}
+mean_by_continent = World %>% group_by(continent) %>% 
+                  summarise(Mean = mean(Score))
+mean_by_continent$continent = factor(mean_by_continent$continent, 
+                                  levels = mean_by_continent$continent[
+                                    order(mean_by_continent$Mean, decreasing = TRUE)])
+
+mean_by_continent %>%
+  ggplot(aes(x = continent, y = Mean, fill = continent)) +
+  geom_bar(stat = "identity")
+``` 
 
 ``` {r echo=FALSE, message=FALSE, comment="continenti", results='hide'}
 World = World %>% drop_na()
@@ -273,145 +488,6 @@ Animazione punteggio della felicità per paese dal 2015 al 2022
 
 ```{r}
 knitr::include_graphics("score_by_year.gif")
-```
-
-## La felicità prima del COVID-19 (anni dal 2015 al 2019)
-
-``` {r}
-options(scipen = 999)
-
-change_with_range = function(start, end) {
-  df = df_union %>% filter(Year == start | Year == end)
-  
-  df = df %>%
-    group_by(Country) %>%
-    #mutate(Mean = mean(Score)) %>%
-    select(Year, Country, Score) %>%
-    filter(Year == start | Year == end) %>%
-    pivot_wider(names_from = Year, values_from = Score) %>% 
-    rowwise()
-  
-    df[[paste("Change", end)]] <- df[[as.character(end)]] - df[[as.character(start)]]
-    
-    df = df[,-(2:3)]
-    
-    df
-}
-
-change_2015_2016 = change_with_range(2015,2016)
-#print(mean(change_2015_2016$Change))
-change_2016_2017 = change_with_range(2016,2017)
-#print(mean(change_2016_2017$Change))
-change_2017_2018 = change_with_range(2017,2018)
-#print(mean(change_2017_2018$Change, na.rm = TRUE))
-change_2018_2019 = change_with_range(2018,2019)
-#print(mean(change_2018_2019$Change, na.rm = TRUE))
-change_2019_2020 = change_with_range(2019,2020)
-#print(mean(change_2019_2020$Change))
-change_2020_2021 = change_with_range(2020,2021)
-#print(mean(change_2020_2021$Change))
-change_2021_2022 = change_with_range(2021,2022)
-#print(mean(change_2021_2022$Change))
-change_by_year = left_join(change_2015_2016, change_2016_2017, by= "Country")
-change_by_year = left_join(change_by_year, change_2017_2018, by= "Country") 
-change_by_year = left_join(change_by_year, change_2018_2019, by= "Country") 
-change_by_year = left_join(change_by_year, change_2019_2020, by= "Country") 
-change_by_year = left_join(change_by_year, change_2020_2021, by= "Country") 
-change_by_year = left_join(change_by_year, change_2021_2022, by= "Country")
-
-names(change_by_year) <- substring(names(change_by_year), 8)
-change_by_year = gather(change_by_year, 2:8, key = "Year", value = "Change")
-colnames(change_by_year)[1] = "Country"
-view(change_by_year)
-```
-
-``` {r echo=FALSE, message=FALSE, comment="score gif", results='hide'}
-change_by_year$iso_a3 = countrycode(sourcevar = change_by_year$Country, origin = "country.name", destination = "iso3c")
-change_by_year = change_by_year %>% drop_na()
-data("World")
-World = left_join(World, change_by_year, by="iso_a3")
-
-change_ap <- 
-  tm_shape(World) +
-  tm_facets(along = "Year", free.coords = FALSE, showNA = FALSE) +
-  tm_style("col_blind") +
-  tm_fill("Change", title="Aumento della felicità nel mondo dal 2015 al 2022", style = "fixed",
-        breaks = c(-2, -0.75, -0.5, -0.25, -0.1, 0, 0.1, 0.25, 0.5, 0.75, Inf),
-        palette = c("#BA0000", "red", "#FF4500", "orange", "yellow", "#90EE90", "#32CD32", "#228B22", "#008000", "#006400"),
-        colorNA = "gray") +
-  tm_borders()
-
-#creazione gif
-tmap_animation(change_ap, filename = "change_by_year.gif", delay = 200, width = 1000, height = 620)
-```
-
-Che cambiamenti ha avuto il punteggio di felicità nel mondo fra il 2015 e il 2019?
-
-``` {r}
-df_2015_2019 = df_union %>% filter(Year < 2020)
-
-country_score_change_2015_2019 <- df_2015_2019 %>% 
-  group_by(Country) %>%
-  mutate(Mean = mean(Score)) %>%
-  #count(n() == 5) %>%
-  select(Year, Country, Score, Mean) %>%
-  #mutate(as.integer(Year)) %>%
-  filter(Year == "2015" | Year == "2019") %>% 
-  pivot_wider(names_from = Year,
-              values_from = Score) %>% 
-  rowwise() %>%
-  mutate(Change = (`2019` - `2015`)) %>%
-  #select(-c(`2015`, `2019`)) %>%
-  arrange(-Mean)
-```
-
-Numero di stati che hanno avuto un incremento della felicità
-
-``` {r}
-positive_2015_2019 = country_score_change_2015_2019 %>% filter(Change > 0)
-show(nrow(positive_2015_2019))
-```
-
-Numero di stati che hanno avuto un decremento della felicità:
-
-``` {r}
-negative_2015_2019 = country_score_change_2015_2019 %>% filter(Change < 0)
-show(nrow(negative_2015_2019))
-```
-
-Medie dei cambiamenti dello score della felicità tra il 2015 e il 2019
-
-``` {r}
-show("Nel totale: ")
-show(mean(country_score_change_2015_2019$Change))
-show("In positivo:")
-show(mean(positive_2015_2019$Change))
-show("In negativo:")
-show(mean(negative_2015_2019$Change))
-```
-
-Correlazione fra il punteggio di felicità e i fattori che la influenzano nel periodo 2015-2019
-
-``` {r}
-cor_2015_2019 <- round(
-  cor(df_2015_2019 %>% 
-      drop_na() %>% 
-      select(-c(Year, Country, iso_a3))
-    ), 2)
-
-col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
-
-# Plot correlation matrix
-corrplot(cor_2015_2019,
-         method = "shade",
-         shade.col = NA,
-         tl.col = "black",
-         tl.srt = 45,
-         col = col(200),
-         addCoef.col = "black",
-         cl.pos = "n",
-         order = "AOE",
-         type = "upper")
 ```
 
 ## Impatto nei primi mesi (analisi dell'anno 2020) 

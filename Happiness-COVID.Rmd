@@ -221,7 +221,7 @@ continents = World %>% select(Country, continent)
 
 mean_2015_2020 = df_2015_2020 %>% group_by(Country) %>% summarise(Mean = mean(Score))
 
-mean_2015_2020 = left_join(mean_2015_2020, a, by = "Country")
+mean_2015_2020 = left_join(mean_2015_2020, continents, by = "Country")
 
 mean_2015_2020 = mean_2015_2020[!duplicated(mean_2015_2020),]
 
@@ -245,7 +245,7 @@ mean_2015_2020 %>%
 ``` 
 Gli stati più felici sono del nord Europa, l'Africa non ha stati in cima e l'Asia solo gli Emirati Arabi e Israele.
 
-``` {r , comment="distribuzione felicità"}
+``` {r}
 mean_2015_2020$iso_a3 = countrycode(sourcevar = mean_2015_2020$Country, origin = "country.name", destination = "iso3c")
 mean_2015_2020 = mean_2015_2020 %>% drop_na()
 
@@ -343,41 +343,79 @@ Nel periodo 2015-2020 i 3 fattori che influenzano maggiormente lo score della fe
 - salute
 - supporto sociale
 
-## Andamento negli anni successivi
-
-
-
-## cambiamento ogni anno
+## Andamento della felicità dopo il COVID-19 (2021-2022)
 
 ``` {r}
-change_2015_2016 = change_start_end(2015,2016)
-#print(mean(change_2015_2016$Change))
-change_2016_2017 = change_start_end(2016,2017)
-#print(mean(change_2016_2017$Change))
-change_2017_2018 = change_start_end(2017,2018)
-#print(mean(change_2017_2018$Change, na.rm = TRUE))
-change_2018_2019 = change_start_end(2018,2019)
-#print(mean(change_2018_2019$Change, na.rm = TRUE))
-change_2019_2020 = change_start_end(2019,2020)
-#print(mean(change_2019_2020$Change))
-change_2020_2021 = change_start_end(2020,2021)
-#print(mean(change_2020_2021$Change))
-change_2021_2022 = change_start_end(2021,2022)
-#print(mean(change_2021_2022$Change))
-change_by_year = left_join(change_2015_2016, change_2016_2017, by= "Country")
-change_by_year = left_join(change_by_year, change_2017_2018, by= "Country") 
-change_by_year = left_join(change_by_year, change_2018_2019, by= "Country") 
-change_by_year = left_join(change_by_year, change_2019_2020, by= "Country") 
-change_by_year = left_join(change_by_year, change_2020_2021, by= "Country") 
-change_by_year = left_join(change_by_year, change_2021_2022, by= "Country")
+df_2021_2022 = df_union %>% filter(Year > 2020) %>% drop_na()
 
-names(change_by_year) <- substring(names(change_by_year), 8)
-change_by_year = gather(change_by_year, 2:8, key = "Year", value = "Change")
-colnames(change_by_year)[1] = "Country"
-view(change_by_year)
+mean_2021_2022 = df_2021_2022 %>% group_by(Country) %>% summarise(Mean = mean(Score))
+
+mean_2021_2022 = left_join(mean_2021_2022, continents, by = "Country")
+
+mean_2021_2022 = mean_2021_2022[!duplicated(mean_2021_2022),]
+
+mean_2021_2022 %>% 
+  arrange(desc(Mean)) %>% 
+  slice_head(n = 20) %>% 
+  ggplot(aes(x = reorder(Country, Mean),
+             y = Mean,
+             colour = continent)) +
+  geom_col(width = 0.75) +
+  coord_flip() +
+  scale_fill_viridis_c(begin = 0, end = 0, option = "turbo") +
+  guides(fill = "none") +
+  labs(title = "Top 20 stati con punteggio di felicità più elevato (2021-2022)",
+       x = "",
+       y = "") +
+  geom_text(aes(label = round(Mean, 2)),
+            color = "white",
+            hjust = 1.5,
+            size = 3)
+``` 
+Gli stati più felici sono del nord Europa, l'Africa non ha stati in cima e l'Asia solo Israele.
+
+``` {r}
+mean_2021_2022$iso_a3 = countrycode(sourcevar = mean_2021_2022$Country, origin = "country.name", destination = "iso3c")
+mean_2021_2022 = mean_2021_2022 %>% drop_na()
+
+data("World")
+World = left_join(World, mean_2021_2022, by="iso_a3")
+World = World %>% drop_na()
+
+tm_shape(World) + 
+  tm_polygons(col = "Mean", n = 10, style ="cont", palette = "seq") +
+  tm_layout(aes.palette = list(seq = "RdYlGn"))
+``` 
+
+``` {r}
+mean_2021_2022$Country = factor(mean_2021_2022$Country, 
+                                  levels = mean_2021_2022$Country[
+                                    order(mean_2021_2022$Mean, decreasing = TRUE)])
+
+mean_2021_2022 %>% ggplot(aes(x=Country, y=Mean)) +
+  geom_bar(stat = "identity") + 
+  labs(y = "Punteggio medio",
+       title = "Distribuzione della felicità (2021-2022)") +
+  theme(axis.text.x=element_blank()) +
+  geom_line(aes(x = as.numeric(Country), y = Mean), color = "red", size = 2.5)
 ```
+Non sono presenti particolari stacchi nello score della felicità fra paesi. 
 
-## Conclusioni
+``` {r}
+change_2021_2022 = change_start_end(2021,2022)
+
+colnames(change_2021_2022)[2] = "Change"
+
+a = df_union %>% 
+      filter(Year == 2021 | Year == 2022) %>% 
+      select(Year, Country, Score) %>%
+      pivot_wider(names_from = Year, values_from = Score) %>% 
+      rowwise()
+
+change_2021_2022 = left_join(change_2021_2022, a, by = "Country")
+
+change_2021_2022 = change_2021_2022[c("Country", "2021", "2022", "Change")]
+``` 
 
 ```{r}
 data("World")
@@ -416,3 +454,48 @@ ggplot(avg_by_year, aes(x=Year, y=Score)) +
     ylab("Punteggio") +
     xlab("Anno")
 ```
+
+Mappa cambiamento 2021-2022
+
+``` {r}
+change_2021_2022$iso_a3 = countrycode(sourcevar = change_2021_2022$Country, origin = "country.name", destination = "iso3c")
+change_2021_2022 = change_2021_2022 %>% drop_na()
+
+data("World")
+World = left_join(World, change_2021_2022, by="iso_a3")
+World = World %>% drop_na()
+
+tm_shape(World) + 
+  tm_polygons(col = "Change", n = 10, style ="cont", palette = "seq") +
+  tm_layout(aes.palette = list(seq = "RdYlGn"))
+```
+
+``` {r}
+cor_2021_2022 <- round(
+  cor(df_2021_2022 %>% 
+      drop_na() %>% 
+      select(-c(Year, Country, iso_a3))
+    ), 2)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+
+# Plot correlation matrix
+corrplot(cor_2021_2022,
+         method = "shade",
+         shade.col = NA,
+         tl.col = "black",
+         tl.srt = 45,
+         col = col(200),
+         addCoef.col = "black",
+         cl.pos = "n",
+         order = "AOE",
+         type = "upper")
+```
+Nel periodo 2015-2020 i 3 fattori che influenzano maggiormente lo score della felicità risultano essere:
+- supporto sociale
+- salute
+- GDP per capita
+
+## Conclusioni
+- Prima dell'avento del COVID-19 la felicità media mondiale ha avuto un aumento del +13.1% mentre dopo una decrescita del -1.33%
+- Sono cambiati anche i fattori che influenzano il punteggio della felicità, prima era maggiormente influenzato dal GDP per capita mentre ora dal supporto sociale
